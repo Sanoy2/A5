@@ -46,8 +46,6 @@ public class MainActivity extends AppCompatActivity
         outgoingCallFilter = new IntentFilter("android.intent.action.NEW_OUTGOING_CALL");
     }
 
-
-
     public void checkResponderSwitch(View view)
     {
         checkResponderSwitch();
