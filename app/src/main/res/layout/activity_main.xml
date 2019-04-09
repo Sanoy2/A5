@@ -58,5 +58,24 @@
         android:textSize="20dp"
         android:onClick="checkBlockerSwitch"/>
 
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="The application will block outgoing voice calls to this number and every number that contains given number."
+        android:layout_margin="20dp"/>
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Example: if you type number: 724 every number that contains sequence 724 will be blocked."
+        android:layout_margin="20dp"/>
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="If you pass empty input, every outgoing voice call will be blocked."
+        android:layout_margin="20dp"/>
+
 
 </LinearLayout>
