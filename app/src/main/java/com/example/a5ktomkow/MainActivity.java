@@ -23,7 +23,8 @@ public class MainActivity extends AppCompatActivity
     private static final int SEND_SMS_RESP = 2;
     private static final int RECEIVE_SMS_RESP = 3;
     private static final int READ_SMS_RESP = 4;
-    private static final int PROCESS_OUTGOING_CALLS = 5;
+    private static final int PROCESS_OUTGOING_CALLS_RESP = 5;
+    private static final int ANSWER_PHONE_CALLS_RESP = 6;
 
     SmsReceiver smsReceiver;
     OutgoingCallReceiver blockerReceiver;
@@ -40,7 +41,7 @@ public class MainActivity extends AppCompatActivity
         blockerReceiver = new OutgoingCallReceiver();
 
         smsAppearedFilter = new IntentFilter("android.provider.Telephony.SMS_RECEIVED");
-        outgoingCallFilter = new IntentFilter("android.provider.Telephony.ACTION_PHONE_STATE_CHANGED");
+        outgoingCallFilter = new IntentFilter("android.intent.action.NEW_OUTGOING_CALL");
     }
 
     public void checkResponderSwitch(View view)
@@ -89,28 +90,29 @@ public class MainActivity extends AppCompatActivity
                 }
             }
 
-            case PROCESS_OUTGOING_CALLS:
+            case PROCESS_OUTGOING_CALLS_RESP:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 {
                     Log.i("perm", "outgoing call process accepted");
-                    blockerSwitchOn();
+                    gotPermissionForBlocker();
+                    return;
                 }
-                return;
+
+            case ANSWER_PHONE_CALLS_RESP:
+                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                {
+                    Log.i("perm","answer phone calls accepted");
+                    gotPermissionForBlocker();
+                    return;
+                }
 
             case SEND_SMS_RESP:
             {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 {
                     Log.i("perm", "send sms accepted");
-                    if (!checkIfResponderCanBeRun())
-                    {
-                        askForPermissionsForSmsResponder();
-                        return;
-                    } else
-                    {
-                        smsSwitchOn();
-                        return;
-                    }
+                    gotPermissionForResponder();
+                    return;
                 }
             }
             case RECEIVE_SMS_RESP:
@@ -118,15 +120,8 @@ public class MainActivity extends AppCompatActivity
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 {
                     Log.i("perm", "receive sms accepted");
-                    if (!checkIfResponderCanBeRun())
-                    {
-                        askForPermissionsForSmsResponder();
-                        return;
-                    } else
-                    {
-                        smsSwitchOn();
-                        return;
-                    }
+                    gotPermissionForResponder();
+                    return;
                 }
             }
             case READ_SMS_RESP:
@@ -134,17 +129,33 @@ public class MainActivity extends AppCompatActivity
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 {
                     Log.i("perm", "read sms accepted");
-                    if (!checkIfResponderCanBeRun())
-                    {
-                        askForPermissionsForSmsResponder();
-                        return;
-                    } else
-                    {
-                        smsSwitchOn();
-                        return;
-                    }
+                    gotPermissionForResponder();
+                    return;
                 }
             }
+        }
+    }
+
+    private void gotPermissionForResponder()
+    {
+        if (!checkIfResponderCanBeRun())
+        {
+            askForPermissionsForSmsResponder();
+        } else
+        {
+            smsSwitchOn();
+        }
+    }
+
+    private void gotPermissionForBlocker()
+    {
+        if(!checkIfBlockerCanBeRun())
+        {
+            askForPermissionsForCallBlocker();
+        }
+        else
+        {
+            blockerSwitchOn();
         }
     }
 
@@ -158,6 +169,21 @@ public class MainActivity extends AppCompatActivity
             Switch smsSwitch = (Switch) findViewById(R.id.smsSwitch);
             smsSwitch.setChecked(false);
             askForPermissionsForSmsResponder();
+        }
+    }
+
+    private void askForPermissionsForCallBlocker()
+    {
+        if(!checkIfPermissionGranted(Manifest.permission.PROCESS_OUTGOING_CALLS))
+        {
+            askForPermission(Manifest.permission.PROCESS_OUTGOING_CALLS, PROCESS_OUTGOING_CALLS_RESP);
+            return;
+        }
+
+        if(!checkIfPermissionGranted(Manifest.permission.ANSWER_PHONE_CALLS))
+        {
+            askForPermission(Manifest.permission.ANSWER_PHONE_CALLS, ANSWER_PHONE_CALLS_RESP);
+            return;
         }
     }
 
@@ -184,14 +210,14 @@ public class MainActivity extends AppCompatActivity
 
     private void turnBlockerOn()
     {
-        if (checkIfPermissionGranted(Manifest.permission.PROCESS_OUTGOING_CALLS))
+        if (checkIfBlockerCanBeRun())
         {
             blockerReceiver.setBlockedNumber(getNumberToBlock());
             Toast.makeText(getApplicationContext(), "blocking: " + getNumberToBlock(), Toast.LENGTH_SHORT).show();
             registerReceiver(blockerReceiver, outgoingCallFilter);
         } else
         {
-            askForPermission(Manifest.permission.PROCESS_OUTGOING_CALLS, PROCESS_OUTGOING_CALLS);
+            askForPermissionsForCallBlocker();
         }
 
     }
@@ -259,6 +285,12 @@ public class MainActivity extends AppCompatActivity
         return checkIfPermissionGranted(Manifest.permission.SEND_SMS)
                 && checkIfPermissionGranted(Manifest.permission.RECEIVE_SMS)
                 && checkIfPermissionGranted(Manifest.permission.READ_SMS);
+    }
+
+    private boolean checkIfBlockerCanBeRun()
+    {
+        return checkIfPermissionGranted(Manifest.permission.ANSWER_PHONE_CALLS)
+                && checkIfPermissionGranted(Manifest.permission.PROCESS_OUTGOING_CALLS);
     }
 
 
